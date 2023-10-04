@@ -36,7 +36,7 @@ AGProjectCharacter::AGProjectCharacter()
 	//GetCharacterMovement()->bSnapToPlaneAtStart = true;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
+	GetCharacterMovement()->bOrientRotationToMovement = false; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
@@ -64,7 +64,6 @@ AGProjectCharacter::AGProjectCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
-	PlayerControllerRef = Cast<APlayerController>(GetController());
 }
 
 
@@ -73,6 +72,7 @@ void AGProjectCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 	world = GetWorld();
+	PlayerControllerRef = Cast<APlayerController>(GetController());
 
 	//Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
@@ -123,18 +123,19 @@ void AGProjectCharacter::Move(const FInputActionValue& Value)
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	if (Controller != nullptr)
+	if (PlayerControllerRef != nullptr)
 	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		//// find out which way is forward
+		//const FRotator Rotation = PlayerControllerRef->GetControlRotation();
+		//const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		//// get forward vector
+		//const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 
-		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
+		//// get right vector 
+		//const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		FVector ForwardDirection = FVector(1, 0, 0);
+		FVector RightDirection = FVector(0, 1, 0);
 		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
@@ -145,33 +146,24 @@ void AGProjectCharacter::Move(const FInputActionValue& Value)
 // Triggered every frame when the input is held down
 void AGProjectCharacter::Look()
 {
-	if (Controller != nullptr)
+	if (PlayerControllerRef != nullptr)
 	{// We look for the location in the world where the player has pressed the input
 		FHitResult Hit;
+		FVector CurrLoc = this->GetActorLocation();
 		bool bHitSuccessful = false;
 	
 		bHitSuccessful = PlayerControllerRef->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, Hit);
-	
-
 		// If we hit a surface, cache the location
 		if (bHitSuccessful)
 		{
 			CachedDestination = Hit.Location;
 		}
 
-		// Move towards mouse pointer or touch
-		APawn* ControlledPawn = GetController()->GetPawn();
-		if (ControlledPawn != nullptr)
-		{
-			FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
-			ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
-		}
-
-	
-			// add yaw and pitch input to controller
-			FVector LookAxisVector = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
-			AddControllerYawInput(LookAxisVector.X);
-			AddControllerPitchInput(LookAxisVector.Y);
+		FRotator newRot = this->GetActorRotation();
+		float newYaw = (CachedDestination - CurrLoc).Rotation().Yaw;
+		newRot.Yaw = newYaw;
+		PlayerControllerRef->SetControlRotation(newRot);
+				
 	}
 }
 void AGProjectCharacter::Tick(float DeltaSeconds)
