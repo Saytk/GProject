@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "GameFramework/PlayerController.h"
 
 #include "GProjectCharacter.generated.h"
 
@@ -16,6 +17,8 @@ class AGProjectCharacter : public ACharacter
 public:
 	AGProjectCharacter();
 
+	FVector CachedDestination;
+	APlayerController* PlayerControllerRef;
 	// Called every frame.
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -43,7 +46,7 @@ protected:
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
-	void Look(const FInputActionValue& Value);
+	void Look();
 
 	/** Called for draw input */
 	void Draw(const FInputActionValue& Value);
@@ -61,5 +64,9 @@ protected:
 	/** Camera boom positioning the camera above the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
+
+
 };
+
+
 

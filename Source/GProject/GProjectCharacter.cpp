@@ -7,12 +7,18 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/Material.h"
 #include "Engine/World.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
+#include "GameFramework/Pawn.h"
+#include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
+#include <Actions/PawnAction.h>
 AGProjectCharacter::AGProjectCharacter()
 {
 	// Set size for player capsule
@@ -20,7 +26,7 @@ AGProjectCharacter::AGProjectCharacter()
 
 	// Don't rotate character to camera direction
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 	bReplicates = true;
 	//// Configure character movement
@@ -57,23 +63,26 @@ AGProjectCharacter::AGProjectCharacter()
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+
+	PlayerControllerRef = Cast<APlayerController>(GetController());
 }
+
 
 void AGProjectCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
 	world = GetWorld();
-	
+
 	//Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{	
-			PlayerMappingContext = LoadObject<UInputMappingContext>(nullptr, TEXT("/Game/TopDown/Input/IMC_ZQSD")); 
+		{
+			PlayerMappingContext = LoadObject<UInputMappingContext>(nullptr, TEXT("/Game/TopDown/Input/IMC_ZQSD"));
 			if (PlayerMappingContext) { UE_LOG(LogTemp, Warning, TEXT("Success")); }
 			Subsystem->AddMappingContext(PlayerMappingContext, 0);
-			
+
 		}
 	}
 }
@@ -84,7 +93,7 @@ void AGProjectCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) 
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SetupPlayerInput"));
 
@@ -98,7 +107,6 @@ void AGProjectCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	}
 
 }
-
 
 void AGProjectCharacter::Draw(const FInputActionValue& Value)
 {
@@ -133,19 +141,41 @@ void AGProjectCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void AGProjectCharacter::Look(const FInputActionValue& Value)
-{
-	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
+// Triggered every frame when the input is held down
+void AGProjectCharacter::Look()
+{
 	if (Controller != nullptr)
-	{
-		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+	{// We look for the location in the world where the player has pressed the input
+		FHitResult Hit;
+		bool bHitSuccessful = false;
+	
+		bHitSuccessful = PlayerControllerRef->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, Hit);
+	
+
+		// If we hit a surface, cache the location
+		if (bHitSuccessful)
+		{
+			CachedDestination = Hit.Location;
+		}
+
+		// Move towards mouse pointer or touch
+		APawn* ControlledPawn = GetController()->GetPawn();
+		if (ControlledPawn != nullptr)
+		{
+			FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+			ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
+		}
+
+	
+			// add yaw and pitch input to controller
+			FVector LookAxisVector = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+			AddControllerYawInput(LookAxisVector.X);
+			AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
 void AGProjectCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+	Look();
 }
