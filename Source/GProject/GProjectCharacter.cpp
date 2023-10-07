@@ -19,6 +19,8 @@
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
 #include <Actions/PawnAction.h>
+#include "ProjectileLauncherComponent.h"
+
 AGProjectCharacter::AGProjectCharacter()
 {
 	// Set size for player capsule
@@ -59,6 +61,15 @@ AGProjectCharacter::AGProjectCharacter()
 	TopDownCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("TopDownCamera"));
 	TopDownCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	TopDownCameraComponent->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	ProjectileLauncherComponent = CreateAbstractDefaultSubobject<UProjectileLauncherComponent>(TEXT("ProjectileLauncherComponent"));
+	ProjectileLauncherComponent->SetupAttachment(RootComponent);
+	
+
+			
+
+	//Initialize Charcter Component 
+	
 
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
@@ -112,13 +123,17 @@ void AGProjectCharacter::Draw(const FInputActionValue& Value)
 {
 	//log
 	UE_LOG(LogTemp, Warning, TEXT("Draw Called"));
+	ProjectileLauncherComponent->LaunchProjectile();
+
+
+
 }
 
 
 
 void AGProjectCharacter::Move(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Move Called"));
+	//UE_LOG(LogTemp, Warning, TEXT("Move Called"));
 
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();

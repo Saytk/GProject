@@ -40,6 +40,9 @@ public:
 	class UInputAction* DrawAction;
 
 	UWorld* world = GetWorld();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UProjectileLauncherComponent* ProjectileLauncherComponent;
 protected:
 
 	/** Called for movement input */
