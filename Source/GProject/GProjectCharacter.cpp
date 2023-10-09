@@ -167,7 +167,7 @@ void AGProjectCharacter::Look()
 		FVector CurrLoc = this->GetActorLocation();
 		bool bHitSuccessful = false;
 	
-		bHitSuccessful = PlayerControllerRef->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, Hit);
+		bHitSuccessful = PlayerControllerRef->GetHitResultUnderCursor(ECollisionChannel::ECC_GameTraceChannel1, true, Hit);
 		// If we hit a surface, cache the location
 		if (bHitSuccessful)
 		{
