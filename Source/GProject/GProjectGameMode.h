@@ -13,6 +13,7 @@ class AGProjectGameMode : public AGameModeBase
 
 public:
 	AGProjectGameMode();
+
 };
 
 
